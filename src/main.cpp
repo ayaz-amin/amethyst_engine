@@ -1,23 +1,51 @@
 #include <iostream>
-#include "application.h"
+#include "lua54/include/lua.hpp"
+#include "raylib35/include/raylib.h"
 
-using namespace Amethyst;
+#include "graphics.hpp"
 
-class SampleApp : public App {
 
-    using App::App;
+void OnStart(lua_State* L)
+{
+    lua_getglobal(L, "OnStart");
+    lua_pcall(L, 0, 0, 1);
+}
 
-    void Start() override {
-        std::cout << "Start" << std::endl;
+void OnUpdate(lua_State* L, float delta_time)
+{
+    lua_getglobal(L, "OnUpdate");
+    lua_pushnumber(L, delta_time);
+    lua_pcall(L, 1, 0, 1);
+}
+
+
+int main()
+{
+    lua_State* L = luaL_newstate();
+
+    lua_register(L, "PrintText", PrintText);
+
+    const int screen_width = 800;
+    const int screen_height = 600;
+    const std::string title = "Game";
+
+    InitWindow(screen_width, screen_height, title.c_str());
+    SetTargetFPS(60);
+
+    luaL_dofile(L, "game_src/_main.lua");
+
+    OnStart(L);
+
+    while(!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        OnUpdate(L, GetFrameTime());
+        EndDrawing();
     }
+    
+    CloseWindow();
+    lua_close(L);
 
-    void Update(float delta_time) override {
-        std::cout << "Update" << std::endl;
-    }
-};
-
-int main() {
-    SampleApp app{800, 600, "Sample App"};
-    app.Run();
     return 0;
 }
